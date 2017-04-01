@@ -442,6 +442,22 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_2_2_exercício_2">2.2 Exercício 2</a></li>
 </ul>
 </li>
+<li><a href="#_3_seção_5_manipulação_de_histogramas">3. Seção 5: Manipulação de histogramas</a>
+<ul class="sectlevel2">
+<li><a href="#_3_1_exercício_1">3.1 Exercício 1</a></li>
+<li><a href="#_3_2_exercício_2">3.2 Exercício 2</a></li>
+</ul>
+</li>
+<li><a href="#_4_seção_6_filtragem_no_domínio_espacial_i">4. Seção 6: Filtragem no domínio espacial I</a>
+<ul class="sectlevel2">
+<li><a href="#_4_1_exercício">4.1 Exercício</a></li>
+</ul>
+</li>
+<li><a href="#_5_seção_7_filtragem_no_domínio_espacial_ii">5. Seção 7: Filtragem no domínio espacial II</a>
+<ul class="sectlevel2">
+<li><a href="#_5_1_exercício">5.1 Exercício</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -746,6 +762,317 @@ int main(int argc, char** argv){
 <div class="paragraph">
 <p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20buracos.png" alt="exercicio%20buracos"></span></p>
 </div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_3_seção_5_manipulação_de_histogramas">3. Seção 5: Manipulação de histogramas</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_3_1_exercício_1">3.1 Exercício 1</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/histogram.cpp como referência, implemente um programa equalize.cpp. Este deverá, para cada imagem capturada, realizar a equalização do histogram antes de exibir a imagem. Teste sua implementação apontando a câmera para ambientes com iluminações variadas e observando o efeito gerado. Assuma que as imagens processadas serão em tons de cinza.</p>
+</div>
+<div class="sect3">
+<h4 id="_resolução_5">Resolução</h4>
+<div class="paragraph">
+<p>A partir do exemplo dado na seção 5 do tutorial, apenas são feitas as alterações necessárias para converter as imagens da câmera para tons de cinza e, após isso, utilzar a função equalizeHist() do OpenCv para calcular a equalização do histograma da imagem original e gerar uma nova imagem equalizada. No programa, como é visto abaixo, são apresentadas duas imagens. Uma original em tons de cinza e a outra equalizada para facilitar na comparação entre as duas.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">equalize.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv){
+  Mat image;
+  int width, height;
+  VideoCapture cap;
+  Mat plane;
+  Mat hist, histeq, histG, histB;
+  int nbins = 64;
+  float range[] = {0, 256};
+  const float *histrange = { range };
+  bool uniform = true;
+  bool acummulate = false;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout &lt;&lt; "largura = " &lt;&lt; width &lt;&lt; endl;
+  cout &lt;&lt; "altura  = " &lt;&lt; height &lt;&lt; endl;
+
+  int histw = nbins, histh = nbins/2;
+  Mat histImg(histh, histw, CV_8UC1, Scalar(0));
+  Mat histImgeq(histh, histw, CV_8UC1, Scalar(0));
+  Mat gray, eq;
+
+  while(1){
+    cap &gt;&gt; image;
+    cvtColor(image, gray, CV_BGR2GRAY);
+    equalizeHist(gray, eq);
+    //split (image, planes);
+    calcHist(&amp;gray, 1, 0, Mat(), hist, 1,
+             &amp;nbins, &amp;histrange,
+             uniform, acummulate);
+    calcHist(&amp;eq, 1, 0, Mat(), histeq, 1,
+              &amp;nbins, &amp;histrange,
+              uniform, acummulate);
+
+
+    normalize(hist, hist, 0, histImg.rows, NORM_MINMAX, -1, Mat());
+    normalize(histeq, histeq, 0, histImgeq.rows, NORM_MINMAX, -1, Mat());
+
+
+
+    histImg.setTo(Scalar(0));
+    histImgeq.setTo(Scalar(0));
+
+
+    for(int i=0; i&lt;nbins; i++){
+      line(histImg,
+           Point(i, histh),
+           Point(i, histh-cvRound(hist.at&lt;float&gt;(i))),
+           Scalar(255, 255, 255), 1, 8, 0);
+      line(histImgeq,
+           Point(i, histh),
+           Point(i, histh-cvRound(histeq.at&lt;float&gt;(i))),
+           Scalar(255, 255, 255), 1, 8, 0);
+
+    }
+    histImg.copyTo(gray(Rect(0, 0       ,nbins, histh)));
+    histImgeq.copyTo(eq(Rect(0, 0       ,nbins, histh)));
+
+
+    //imshow("histograma", histImgR);
+    imshow("imagem equalizada", eq);
+    imshow("image", gray);
+    if(waitKey(30) &gt;= 0) break;
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Os resultados podem ser vistos na seguinte imagem:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20equalize.png" alt="exercicio%20equalize"></span></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_3_2_exercício_2">3.2 Exercício 2</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/histogram.cpp como referência, implemente um programa motiondetector.cpp. Este deverá continuamente calcular o histograma da imagem (apenas uma componente de cor é suficiente) e compará-lo com o último histograma calculado. Quando a diferença entre estes ultrapassar um limiar pré-estabelecido, ative um alarme. Utilize uma função de comparação que julgar conveniente.</p>
+</div>
+<div class="sect3">
+<h4 id="_resolução_6">Resolução</h4>
+
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_4_seção_6_filtragem_no_domínio_espacial_i">4. Seção 6: Filtragem no domínio espacial I</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_4_1_exercício">4.1 Exercício</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/filtroespacial.cpp como referência, implemente um programa laplgauss.cpp. O programa deverá acrescentar mais uma funcionalidade ao exemplo fornecido, permitindo que seja calculado o laplaciano do gaussiano das imagens capturadas. Compare o resultado desse filtro com a simples aplicação do filtro laplaciano.</p>
+</div>
+<div class="sect3">
+<h4 id="_resolução_7">Resolução</h4>
+<div class="paragraph">
+<p>A partir do exemplo presente na seção 6 do tutorial, adiciona-se um novo array para uma matriz 5x5 com a máscara do laplaciano do gaussiano e, ao detectar que a tecla k foi pressionada, o programa filtra a imagem com a máscara do LoG.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">laplgauss.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+void printmask(Mat &amp;m){
+  for(int i=0; i&lt;m.size().height; i++){
+    for(int j=0; j&lt;m.size().width; j++){
+      cout &lt;&lt; m.at&lt;float&gt;(i,j) &lt;&lt; ",";
+    }
+    cout &lt;&lt; endl;
+  }
+}
+
+void menu(){
+  cout &lt;&lt; "\npressione a tecla para ativar o filtro: \n"
+  "a - calcular modulo\n"
+    "m - media\n"
+    "g - gauss\n"
+    "v - vertical\n"
+  "h - horizontal\n"
+    "l - laplaciano\n"
+    "k - LoG (Laplaciano do Gaussiano)\n"
+  "esc - sair\n";
+}
+
+int main(int argvc, char** argv){
+  VideoCapture video;
+  float media[] = {1,1,1,
+           1,1,1,
+           1,1,1};
+  float gauss[] = {1,2,1,
+           2,4,2,
+           1,2,1};
+  float horizontal[]={-1,0,1,
+            -2,0,2,
+            -1,0,1};
+  float vertical[]={-1,-2,-1,
+          0,0,0,
+          1,2,1};
+  float laplacian[]={0,-1,0,
+           -1,4,-1,
+           0,-1,0};
+  float log[] = {0, 0, -1, 0, 0,
+                 0, -1, -2, -1, 0,
+                  -1, -2, 16, -2, -1,
+                  0, -1, -2, -1, 0,
+                  0, 0, -1, 0, 0};
+
+  Mat cap, frame, frame32f, frameFiltered;
+  Mat mask(3,3,CV_32F), mask1, mask2;
+  Mat result, result1;
+  double width, height, min, max;
+  int absolut;
+  char key;
+
+  video.open(0);
+  if(!video.isOpened())
+    return -1;
+  width=video.get(CV_CAP_PROP_FRAME_WIDTH);
+  height=video.get(CV_CAP_PROP_FRAME_HEIGHT);
+  std::cout &lt;&lt; "largura=" &lt;&lt; width &lt;&lt; "\n";;
+  std::cout &lt;&lt; "altura =" &lt;&lt; height&lt;&lt; "\n";;
+
+  namedWindow("filtroespacial",1);
+
+  mask = Mat(3, 3, CV_32F, media);
+  scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+  swap(mask, mask1);
+  absolut=1; // calcs abs of the image
+
+  menu();
+  for(;;){
+    video &gt;&gt; cap;
+    cvtColor(cap, frame, CV_BGR2GRAY);
+    flip(frame, frame, 1);
+    imshow("original", frame);
+    frame.convertTo(frame32f, CV_32F);
+    filter2D(frame32f, frameFiltered, frame32f.depth(), mask, Point(1,1), 0);
+    if(absolut){
+      frameFiltered=abs(frameFiltered);
+    }
+    frameFiltered.convertTo(result, CV_8U);
+    imshow("filtroespacial", result);
+    key = (char) waitKey(10);
+    if( key == 27 ) break; // esc pressed!
+    switch(key){
+    case 'a':
+    menu();
+      absolut=!absolut;
+      break;
+    case 'm':
+    menu();
+      mask = Mat(3, 3, CV_32F, media);
+      scaleAdd(mask, 1/9.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      break;
+    case 'g':
+    menu();
+      mask = Mat(3, 3, CV_32F, gauss);
+      scaleAdd(mask, 1/16.0, Mat::zeros(3,3,CV_32F), mask1);
+      mask = mask1;
+      printmask(mask);
+      break;
+    case 'h':
+    menu();
+      mask = Mat(3, 3, CV_32F, horizontal);
+      printmask(mask);
+      break;
+    case 'v':
+    menu();
+      mask = Mat(3, 3, CV_32F, vertical);
+      printmask(mask);
+      break;
+    case 'l':
+    menu();
+      mask = Mat(3, 3, CV_32F, laplacian);
+      printmask(mask);
+      break;
+    case 'k':
+      mask = Mat(5, 5, CV_32F, log);
+      printmask(mask);
+    default:
+      break;
+    }
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Abaixo, na imagem, se vê como o filtro atua na imagem original.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20log.png" alt="exercicio%20log"></span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_5_seção_7_filtragem_no_domínio_espacial_ii">5. Seção 7: Filtragem no domínio espacial II</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_5_1_exercício">5.1 Exercício</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/addweighted.cpp como referência, implemente um programa tiltshift.cpp. Três ajustes deverão ser providos na tela da interface:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>um ajuste para regular a altura da região central que entrará em foco;<br></p>
+</li>
+<li>
+<p>um ajuste para regular a força de decaimento da região borrada;<br></p>
+</li>
+<li>
+<p>um ajuste para regular a posição vertical do centro da região que entrará em foco. Finalizado o programa, a imagem produzida deverá ser salva em arquivo.<br></p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_resolução_8">Resolução</h4>
 <div class="paragraph">
 <p><strong>Falta concluir com o resto das resoluções</strong></p>
 </div>
@@ -756,7 +1083,7 @@ int main(int argc, char** argv){
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-04-01 00:24:09 BRT
+Last updated 2017-04-01 17:09:22 BRT
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css">
