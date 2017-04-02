@@ -1074,7 +1074,213 @@ int main(int argvc, char** argv){
 <div class="sect3">
 <h4 id="_resolução_8">Resolução</h4>
 <div class="paragraph">
-<p><strong>Falta concluir com o resto das resoluções</strong></p>
+<p>Para fazer o <em>tiltshift</em>, é preciso criar duas imagens de ponderação do tamanho da imagem que se queira trabalhar onde, em uma se tem uma imagem em tons de cinza que faz dois gradientes a partir de uma função (presenta na seção do tutorial) que gera qual tom de cinza estará naquele pixel e, na outra imagem, o negativo dessa primeira. Após serem feitas as imagens para ponderação, aplicamos um filtro para borramento da imagem que se deseja usar o tiltshift. Com a primeira imagem de ponderação, é feita uma multiplicação pixel a pixel com a imagem primária e, com a imagem primária pós filtro de borramento, é feita a mesma multiplicação com o negativo da imagem de ponderação e, para ser feita a imagem final, com o efeito tiltshift, basta utilizar a função do OpenCv addWeighted para fazer a soma das duas imagens multiplicadas e formar a iamgem resultado com o efeito aplicado. Os parâmetros da função alpha que gera os valores de tom de cinza dos pixels das imagens de ponderação são passados por <em>trackbars</em>. Após completar as modificações, basta clicar qualquer tecla para, antes do programa fechar, a imagem modificada ser salva. A implementação pode ser vista no código abaixo:</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">tiltshift.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;math.h&gt;
+
+using namespace cv;
+using namespace std;
+
+int d_slider = 1;
+int d_slider_max = 100;
+int l1_slider = 1;
+int l1_slider_max;
+int l2_slider = 1;
+int l2_slider_max;
+
+int top_slider = 0;
+int top_slider_max = 100;
+
+Mat image1, image2, blended;
+Mat imageTop;
+
+int teste;
+
+char TrackbarName[50];
+
+int width, height;
+int d, l1, l2;
+Mat p1, p2, dst1, dst2, resultado, dst, src;
+
+float alpha(int x, int d, int l1, int l2){
+  double alpha = (float)255*(float)1/(float)2*((float)tanh(((float)x-(float)l1)/(float)d)-(float)tanh(((float)x-(float)l2)/(float)d));
+  return alpha;
+
+}
+
+void on_trackbar_d(int, void*){
+ d = d_slider;
+ for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p1.at&lt;uchar&gt;(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p2.at&lt;uchar&gt;(i, j) = 255 - p1.at&lt;uchar&gt;(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+ imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY);
+}
+
+void on_trackbar_l1(int, void*){
+ l1 = l1_slider;
+ for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p1.at&lt;uchar&gt;(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p2.at&lt;uchar&gt;(i, j) = 255 - p1.at&lt;uchar&gt;(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+  imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY);
+}
+
+void on_trackbar_l2(int, void*){
+ l2 = l2_slider+height/2;
+ for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p1.at&lt;uchar&gt;(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i &lt; width; ++i)
+  {
+    for (int j = 0; j &lt; height; ++j)
+    {
+      p2.at&lt;uchar&gt;(i, j) = 255 - p1.at&lt;uchar&gt;(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+  imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY);
+}
+
+int main(int argvc, char** argv){
+
+  teste = 5;
+
+  cout &lt;&lt; teste &lt;&lt; endl;
+
+  src = imread("basket.jpg");
+
+  width=src.size().width;
+  height=src.size().height;
+
+  d = 50;
+  l1 = height/4;
+  l2 = 3*height/4;
+
+  l1_slider_max = height/2;
+  l2_slider_max = height/2;
+
+  cout &lt;&lt; l1 &lt;&lt; endl &lt;&lt; l2 &lt;&lt; endl;
+
+
+
+  Mat p11(width, height, CV_8UC1);
+  Mat p12(width, height, CV_8UC1);
+
+  p1 = p11.clone();
+  p2 = p12.clone();
+
+  for ( int i = 1; i &lt; 12; i = i + 2 )
+    {
+      medianBlur ( src, dst, i );
+    }
+
+  src.copyTo(imageTop);
+  namedWindow("tiltshift", 1);
+
+  sprintf( TrackbarName, "d x %d", d_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;d_slider,
+          d_slider_max,
+          on_trackbar_d );
+  on_trackbar_d(d_slider, 0 );
+  sprintf( TrackbarName, "l1 x %d", l1_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;l1_slider,
+          l1_slider_max,
+          on_trackbar_l1 );
+  on_trackbar_l1(l1_slider, 0 );
+  sprintf( TrackbarName, "l2 x %d", l2_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &amp;l2_slider,
+          l2_slider_max,
+          on_trackbar_l2 );
+  on_trackbar_l2(l2_slider, 0 );
+
+  waitKey(0);
+
+  imwrite("imagem_resultado.png", resultado);
+
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>O resultado da implementação pode ser visto na imagem que segue onde é mostrado a imagem resultante com os parametros determinados nas <em>trackbars</em> e as imagens de ponderação geradas por aqueles parâmetros:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20tiltshift.png" alt="exercicio%20tiltshift"></span></p>
 </div>
 </div>
 </div>
@@ -1083,7 +1289,7 @@ int main(int argvc, char** argv){
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-04-01 17:09:22 BRT
+Last updated 2017-04-01 23:17:13 BRT
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css">

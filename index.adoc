@@ -553,6 +553,208 @@ Utilizando o programa exemplos/addweighted.cpp como referência, implemente um p
 
 ==== Resolução
 
+Para fazer o _tiltshift_, é preciso criar duas imagens de ponderação do tamanho da imagem que se queira trabalhar onde, em uma se tem uma imagem em tons de cinza que faz dois gradientes a partir de uma função (presenta na seção do tutorial) que gera qual tom de cinza estará naquele pixel e, na outra imagem, o negativo dessa primeira. Após serem feitas as imagens para ponderação, aplicamos um filtro para borramento da imagem que se deseja usar o tiltshift. Com a primeira imagem de ponderação, é feita uma multiplicação pixel a pixel com a imagem primária e, com a imagem primária pós filtro de borramento, é feita a mesma multiplicação com o negativo da imagem de ponderação e, para ser feita a imagem final, com o efeito tiltshift, basta utilizar a função do OpenCv addWeighted para fazer a soma das duas imagens multiplicadas e formar a iamgem resultado com o efeito aplicado. Os parâmetros da função alpha que gera os valores de tom de cinza dos pixels das imagens de ponderação são passados por _trackbars_. Após completar as modificações, basta clicar qualquer tecla para, antes do programa fechar, a imagem modificada ser salva. A implementação pode ser vista no código abaixo: 
+
+[sidebar]
+****
+.tiltshift.cpp
+[source,c++]
+----
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <math.h>
+
+using namespace cv;
+using namespace std;
+
+int d_slider = 1;
+int d_slider_max = 100;
+int l1_slider = 1;
+int l1_slider_max;
+int l2_slider = 1;
+int l2_slider_max;
+
+int top_slider = 0;
+int top_slider_max = 100;
+
+Mat image1, image2, blended;
+Mat imageTop; 
+
+int teste;
+
+char TrackbarName[50];
+
+int width, height;
+int d, l1, l2;
+Mat p1, p2, dst1, dst2, resultado, dst, src;
+
+float alpha(int x, int d, int l1, int l2){
+  double alpha = (float)255*(float)1/(float)2*((float)tanh(((float)x-(float)l1)/(float)d)-(float)tanh(((float)x-(float)l2)/(float)d));
+  return alpha;
+
+}
+
+void on_trackbar_d(int, void*){
+ d = d_slider;
+ for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+ imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY); 
+}
+
+void on_trackbar_l1(int, void*){
+ l1 = l1_slider;
+ for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+  imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY); 
+}
+
+void on_trackbar_l2(int, void*){
+ l2 = l2_slider+height/2;
+ for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
+    }
+  }
+
+  for (int i = 0; i < width; ++i)
+  {
+    for (int j = 0; j < height; ++j)
+    {
+      p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
+    }
+  }
+  cvtColor(p1, p1, CV_GRAY2RGB);
+  cvtColor(p2, p2, CV_GRAY2RGB);
+
+  multiply(src, p1, dst1, 1.0, CV_16U);
+  multiply(dst, p2, dst2, 1.0, CV_16U);
+
+ addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+ imshow("tiltshift", resultado);
+  imshow("ponderacao 1", p1);
+ imshow("ponderacao 2", p2);
+
+  cvtColor(p1, p1, CV_RGB2GRAY);
+  cvtColor(p2, p2, CV_RGB2GRAY); 
+}
+
+int main(int argvc, char** argv){
+
+  teste = 5;
+
+  cout << teste << endl;
+
+  src = imread("basket.jpg");
+
+  width=src.size().width;
+  height=src.size().height;
+
+  d = 50;
+  l1 = height/4;
+  l2 = 3*height/4;
+
+  l1_slider_max = height/2;
+  l2_slider_max = height/2;
+
+  cout << l1 << endl << l2 << endl;
 
 
-*Falta concluir com o resto das resoluções*
+
+  Mat p11(width, height, CV_8UC1);
+  Mat p12(width, height, CV_8UC1);
+
+  p1 = p11.clone();
+  p2 = p12.clone();
+
+  for ( int i = 1; i < 12; i = i + 2 )
+    { 
+      medianBlur ( src, dst, i );
+    }
+
+  src.copyTo(imageTop);
+  namedWindow("tiltshift", 1);
+  
+  sprintf( TrackbarName, "d x %d", d_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &d_slider,
+          d_slider_max,
+          on_trackbar_d );
+  on_trackbar_d(d_slider, 0 );
+  sprintf( TrackbarName, "l1 x %d", l1_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &l1_slider,
+          l1_slider_max,
+          on_trackbar_l1 );
+  on_trackbar_l1(l1_slider, 0 );
+  sprintf( TrackbarName, "l2 x %d", l2_slider_max );
+  createTrackbar( TrackbarName, "tiltshift",
+          &l2_slider,
+          l2_slider_max,
+          on_trackbar_l2 );
+  on_trackbar_l2(l2_slider, 0 );
+
+  waitKey(0);
+
+  imwrite("imagem_resultado.png", resultado);
+
+  return 0;
+}
+
+----
+****
+
+O resultado da implementação pode ser visto na imagem que segue onde é mostrado a imagem resultante com os parametros determinados nas _trackbars_ e as imagens de ponderação geradas por aqueles parâmetros:
+
+image:exercicio%20tiltshift.png[]
