@@ -2,6 +2,7 @@
 :toc: left
 :toc-title: Sumário
 :imagesdir: https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/
+:last-update-label!:
 
 = Resolução dos exercícios de PDI
 :author: Luciano Rodrigues Lucio Neto
@@ -385,6 +386,97 @@ image:exercicio%20equalize.png[]
 Utilizando o programa exemplos/histogram.cpp como referência, implemente um programa motiondetector.cpp. Este deverá continuamente calcular o histograma da imagem (apenas uma componente de cor é suficiente) e compará-lo com o último histograma calculado. Quando a diferença entre estes ultrapassar um limiar pré-estabelecido, ative um alarme. Utilize uma função de comparação que julgar conveniente.
 
 ==== Resolução
+
+O método que foi implementada para detecção de movimento no programa fonte abaixo foi o seguinte: guarda-se, em um acumulador, a soma de todos os tons de cinza dos pixels de um frame anterior da câmera e, em outro acumulador, a soma de todos os tons do frame atual. Com esses dois valores, podemos identificar se um frame é igual ou semelhante ao anterior. Se essa diferenã for maior que um limiar determinado, quer dizer que a imagem se difere mais do que o valor desejável, caracterizando um movimento de um frame para o outro.
+
+[sidebar]
+****
+.motiondetector.cpp
+[source,c++]
+----
+#include <iostream>
+#include <opencv2/opencv.hpp>
+
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv){
+  Mat image;
+  int width, height;
+  VideoCapture cap;
+  bool flag = false;
+  long int soma_anterior, soma;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout << "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout << "largura = " << width << endl;
+  cout << "altura  = " << height << endl;
+
+  Mat gray;
+
+  soma_anterior = 0;
+  soma = 0;
+
+  while(1){
+    if(flag == false){
+      cout << "feifjie" << endl;
+      cap >> image;
+      cvtColor(image, gray, CV_BGR2GRAY);
+
+      for(int i=0; i<width; i++){
+        for (int j = 0; j < height; ++j)
+        {
+          soma_anterior += gray.at<uchar>(i,j);
+        }
+      }
+      //imshow("histograma", histImgR);
+      imshow("image", gray);
+      flag = true;
+
+      if(waitKey(30) >= 0) break;
+    }else{
+      cap >> image;
+      cvtColor(image, gray, CV_BGR2GRAY);
+
+      for(int i=0; i<width; i++){
+        for (int j = 0; j < height; ++j)
+        {
+          soma+= gray.at<uchar>(i,j);
+        }
+      }
+
+      long int limiar = soma - soma_anterior;
+
+      //cout << "limiar = " << limiar << endl;
+
+      if(limiar < -700000 || limiar > 700000){
+        cout << "\n\nMovimento detectado!\n\n";
+      }
+
+      //imshow("histograma", histImgR);
+      imshow("image", gray);
+      soma_anterior = soma;
+      soma = 0;
+      if(waitKey(30) >= 0) break;
+    }
+
+
+
+
+
+  }
+  return 0;
+}
+----
+****
 
 == 4. Seção 6: Filtragem no domínio espacial I
 
