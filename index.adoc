@@ -1,7 +1,7 @@
 :source-highlighter: prettify
 :toc: left
 :toc-title: Sumário
-:imagesdir: https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/
+:imagesdir: https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/
 :last-update-label!:
 
 = Resolução dos exercícios de PDI
