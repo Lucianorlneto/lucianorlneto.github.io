@@ -976,4 +976,4 @@ int main(int argvc, char** argv){
 
 O resultado de um dos frames, apesar da baixa qualidade do vídeo utilizado para o teste, pode ser visto na imagem a seguir:
 
-image:megamantilt.png[]
+image:megamantiltshift.png[]
