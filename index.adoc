@@ -8,7 +8,7 @@
 :email: lucianorlneto@gmail.com
 
 == Observação
-Todos os exercícios são propostos no tutorial de OpenCV do professor Agostinho, UFRN, http://agostinhobritojr.github.io/tutoriais/pdi/
+Todos os exercícios são propostos no tutorial de OpenCV feito pelo professor Agostinho, UFRN, http://agostinhobritojr.github.io/tutoriais/pdi/
 
 == 1. Seção 3: Manipulando _pixels_ em uma imagem
 
