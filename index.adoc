@@ -1,7 +1,7 @@
 :source-highlighter: prettify
 :toc: left
 :toc-title: Sumário
-:imagesdir: https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/
+:imagesdir: https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/
 :last-update-label!:
 
 = Resolução dos exercícios de PDI
@@ -971,10 +971,9 @@ int main(int argvc, char** argv){
   return 0;
 }
 
+----
+****
+
 O resultado de um dos frames, apesar da baixa qualidade do vídeo utilizado para o teste, pode ser visto na imagem a seguir:
 
 image:megamantilt.png[]
-
-
-----
-****
