@@ -455,7 +455,8 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 </li>
 <li><a href="#_5_seção_7_filtragem_no_domínio_espacial_ii">5. Seção 7: Filtragem no domínio espacial II</a>
 <ul class="sectlevel2">
-<li><a href="#_5_1_exercício">5.1 Exercício</a></li>
+<li><a href="#_5_1_exercício_1">5.1 Exercício 1</a></li>
+<li><a href="#_5_2_exercício_2">5.2 Exercício 2</a></li>
 </ul>
 </li>
 </ul>
@@ -541,7 +542,7 @@ int main(int argc, char** argv){
 </div>
 <div class="paragraph">
 <p>Os resultados são mostrados abaixo:
-<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%203.1%20(regions).png" alt="exercicio%203.1%20(regions)"></span></p>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%203.1%20(regions).png" alt="exercicio%203.1%20(regions)"></span></p>
 </div>
 </div>
 </div>
@@ -610,7 +611,7 @@ int main(int argc, char** argv){
 </div>
 <div class="paragraph">
 <p>Abaixo temos o resultado em uma imagem:
-<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20trocaregioes.png" alt="exercicio%20trocaregioes"></span></p>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%20trocaregioes.png" alt="exercicio%20trocaregioes"></span></p>
 </div>
 </div>
 </div>
@@ -760,7 +761,7 @@ int main(int argc, char** argv){
 <p>Como resultado, mostrando passo a passo das operações, temos o seguinte:</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20buracos.png" alt="exercicio%20buracos"></span></p>
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%20buracos.png" alt="exercicio%20buracos"></span></p>
 </div>
 </div>
 </div>
@@ -872,7 +873,7 @@ int main(int argc, char** argv){
 <p>Os resultados podem ser vistos na seguinte imagem:</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20equalize.png" alt="exercicio%20equalize"></span></p>
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%20equalize.png" alt="exercicio%20equalize"></span></p>
 </div>
 </div>
 </div>
@@ -883,7 +884,106 @@ int main(int argc, char** argv){
 </div>
 <div class="sect3">
 <h4 id="_resolução_6">Resolução</h4>
+<div class="paragraph">
+<p>O método que foi implementada para detecção de movimento no programa fonte abaixo foi o seguinte: guarda-se, em um acumulador, a soma de todos os tons de cinza dos pixels de um frame anterior da câmera e, em outro acumulador, a soma de todos os tons do frame atual. Com esses dois valores, podemos identificar se um frame é igual ou semelhante ao anterior. Se essa diferenã for maior que um limiar determinado, quer dizer que a imagem se difere mais do que o valor desejável, caracterizando um movimento de um frame para o outro.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">motiondetector.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
 
+using namespace cv;
+using namespace std;
+
+int main(int argc, char** argv){
+  Mat image;
+  int width, height;
+  VideoCapture cap;
+  bool flag = false;
+  long int soma_anterior, soma;
+
+  cap.open(0);
+
+  if(!cap.isOpened()){
+    cout &lt;&lt; "cameras indisponiveis";
+    return -1;
+  }
+
+  width  = cap.get(CV_CAP_PROP_FRAME_WIDTH);
+  height = cap.get(CV_CAP_PROP_FRAME_HEIGHT);
+
+  cout &lt;&lt; "largura = " &lt;&lt; width &lt;&lt; endl;
+  cout &lt;&lt; "altura  = " &lt;&lt; height &lt;&lt; endl;
+
+  Mat gray;
+
+  soma_anterior = 0;
+  soma = 0;
+
+  while(1){
+    if(flag == false){
+      cout &lt;&lt; "feifjie" &lt;&lt; endl;
+      cap &gt;&gt; image;
+      cvtColor(image, gray, CV_BGR2GRAY);
+
+      for(int i=0; i&lt;width; i++){
+        for (int j = 0; j &lt; height; ++j)
+        {
+          soma_anterior += gray.at&lt;uchar&gt;(i,j);
+        }
+      }
+      //imshow("histograma", histImgR);
+      imshow("image", gray);
+      flag = true;
+
+      if(waitKey(30) &gt;= 0) break;
+    }else{
+      cap &gt;&gt; image;
+      cvtColor(image, gray, CV_BGR2GRAY);
+
+      for(int i=0; i&lt;width; i++){
+        for (int j = 0; j &lt; height; ++j)
+        {
+          soma+= gray.at&lt;uchar&gt;(i,j);
+        }
+      }
+
+      long int limiar = soma - soma_anterior;
+
+      //cout &lt;&lt; "limiar = " &lt;&lt; limiar &lt;&lt; endl;
+
+      if(limiar &lt; -700000 || limiar &gt; 700000){
+        cout &lt;&lt; "\n\nMovimento detectado!\n\n";
+      }
+
+      //imshow("histograma", histImgR);
+      imshow("image", gray);
+      soma_anterior = soma;
+      soma = 0;
+      if(waitKey(30) &gt;= 0) break;
+    }
+
+
+
+
+
+  }
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>O resultado pode ser visto nas duas imagens abaixo:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/md1.png" alt="md1"></span><br>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/md2.png" alt="md2"></span></p>
+</div>
 </div>
 </div>
 </div>
@@ -1044,7 +1144,7 @@ int main(int argvc, char** argv){
 <p>Abaixo, na imagem, se vê como o filtro atua na imagem original.</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20log.png" alt="exercicio%20log"></span></p>
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%20log.png" alt="exercicio%20log"></span></p>
 </div>
 </div>
 </div>
@@ -1054,7 +1154,7 @@ int main(int argvc, char** argv){
 <h2 id="_5_seção_7_filtragem_no_domínio_espacial_ii">5. Seção 7: Filtragem no domínio espacial II</h2>
 <div class="sectionbody">
 <div class="sect2">
-<h3 id="_5_1_exercício">5.1 Exercício</h3>
+<h3 id="_5_1_exercício_1">5.1 Exercício 1</h3>
 <div class="paragraph">
 <p>Utilizando o programa exemplos/addweighted.cpp como referência, implemente um programa tiltshift.cpp. Três ajustes deverão ser providos na tela da interface:</p>
 </div>
@@ -1074,7 +1174,7 @@ int main(int argvc, char** argv){
 <div class="sect3">
 <h4 id="_resolução_8">Resolução</h4>
 <div class="paragraph">
-<p>Para fazer o <em>tiltshift</em>, é preciso criar duas imagens de ponderação do tamanho da imagem que se queira trabalhar onde, em uma se tem uma imagem em tons de cinza que faz dois gradientes a partir de uma função (presenta na seção do tutorial) que gera qual tom de cinza estará naquele pixel e, na outra imagem, o negativo dessa primeira. Após serem feitas as imagens para ponderação, aplicamos um filtro para borramento da imagem que se deseja usar o tiltshift. Com a primeira imagem de ponderação, é feita uma multiplicação pixel a pixel com a imagem primária e, com a imagem primária pós filtro de borramento, é feita a mesma multiplicação com o negativo da imagem de ponderação e, para ser feita a imagem final, com o efeito tiltshift, basta utilizar a função do OpenCv addWeighted para fazer a soma das duas imagens multiplicadas e formar a iamgem resultado com o efeito aplicado. Os parâmetros da função alpha que gera os valores de tom de cinza dos pixels das imagens de ponderação são passados por <em>trackbars</em>. Após completar as modificações, basta clicar qualquer tecla para, antes do programa fechar, a imagem modificada ser salva. A implementação pode ser vista no código abaixo:</p>
+<p>Para fazer o <em>tiltshift</em>, é preciso criar duas imagens de ponderação do tamanho da imagem que se queira trabalhar onde, em uma se tem uma imagem em tons de cinza que faz dois gradientes a partir de uma função (presenta na seção do tutorial) que gera qual tom de cinza estará naquele pixel e, na outra imagem, o negativo dessa primeira. Após serem feitas as imagens para ponderação, aplicamos um filtro para borramento, com média entre 12 imagens da imagem que se deseja apicar o efeito tiltshift. Com a primeira imagem de ponderação, é feita uma multiplicação pixel a pixel com a imagem primária e, com a imagem primária. Pós filtro de borramento, é feita a mesma multiplicação com o negativo da imagem de ponderação e, para ser feita a imagem final, com o efeito tiltshift, basta utilizar a função do OpenCv addWeighted para fazer a soma das duas imagens multiplicadas e formar a iamgem resultado com o efeito aplicado. Os parâmetros da função alpha que gera os valores de tom de cinza dos pixels das imagens de ponderação são passados por <em>trackbars</em>. Após completar as modificações, basta clicar qualquer tecla para, antes do programa fechar, a imagem modificada ser salva. A implementação pode ser vista no código abaixo:</p>
 </div>
 <div class="sidebarblock">
 <div class="content">
@@ -1280,7 +1380,132 @@ int main(int argvc, char** argv){
 <p>O resultado da implementação pode ser visto na imagem que segue onde é mostrado a imagem resultante com os parametros determinados nas <em>trackbars</em> e as imagens de ponderação geradas por aqueles parâmetros:</p>
 </div>
 <div class="paragraph">
-<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/pdi_imagens/master/exercicio%20tiltshift.png" alt="exercicio%20tiltshift"></span></p>
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%20tiltshift.png" alt="exercicio%20tiltshift"></span></p>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_5_2_exercício_2">5.2 Exercício 2</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/addweighted.cpp como referência, implemente um programa tiltshiftvideo.cpp. Tal programa deverá ser capaz de processar um arquivo de vídeo, produzir o efeito de tilt-shift nos quadros presentes e escrever o resultado em outro arquivo de vídeo. A ideia é criar um efeito de miniaturização de cenas. Descarte quadros em uma taxa que julgar conveniente para evidenciar o efeito de stop motion, comum em vídeos desse tipo.</p>
+</div>
+<div class="sect3">
+<h4 id="_resolução_9">Resolução</h4>
+<div class="paragraph">
+<p>Para aplicar o efeito tiltshift em um vídeo, foi utilizado o mesmo algoritmo da questão anterior, porém , dependendo da resolução e quantidade de reetições do mesmo frame para o cálculo da média (<em>blur</em>), o vídeo começa a ser processado de forma muito lenta, ou seja, a forma como foi implementado o programa mostrado a seguir é inviável para aplicação do efeito tiltshift em vídeo de forma perfeita, porém, ainda aplica o efeito. Único passo que difere da implementação para uma simples é o redimensionamento do frame do vídeo para uma imagem MxM, pois as funções do OpenCv utilizadas não funcionam com matrizes MxN. O <em>blur</em> é feito com 15 imagens e a função de cálculo das imagens de ponderação tem parâmetros d = 30, l1 = 1/4 do frame e l2 = 3/4 do frame.</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">tiltshiftvideo.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;math.h&gt;
+
+using namespace cv;
+using namespace std;
+
+int teste;
+
+char TrackbarName[50];
+
+int width, height;
+int d, l1, l2;
+Mat p1, p2, dst1, dst2, resultado, frame_borrado, frame;
+VideoCapture cap, video;
+
+float alpha(int x, int d, int l1, int l2){
+  double alpha = (float)255*(float)1/(float)2*((float)tanh(((float)x-(float)l1)/(float)d)-(float)tanh(((float)x-(float)l2)/(float)d));
+  return alpha;
+
+}
+
+int main(int argvc, char** argv){
+
+
+  video.open("megaman.mp4");
+
+  Size s(400,400);
+
+  video &gt;&gt; frame;
+  resize(frame, frame, s);
+
+  width  = frame.size().width;
+  height = frame.size().height;
+
+  d = 30;
+  l1 = height/4;
+  l2 = 3*height/4;
+
+  Mat p11(width, height, CV_8UC1);
+  Mat p12(width, height, CV_8UC1);
+
+  p1 = p11.clone();
+  p2 = p12.clone();
+
+  cout &lt;&lt; width&lt;&lt; endl &lt;&lt; height &lt;&lt; endl;
+
+    namedWindow("tiltshift", 1);
+
+  while(true){
+
+    video &gt;&gt; frame;
+    resize(frame, frame, s);
+
+
+    for ( int i = 1; i &lt; 15; i = i + 2 )
+      {
+        medianBlur ( frame, frame_borrado, i );
+      }
+
+      for (int i = 0; i &lt; width; ++i)
+      {
+        for (int j = 0; j &lt; height; ++j)
+        {
+          p1.at&lt;uchar&gt;(i, j) = alpha(i, d, l1, l2);
+        }
+      }
+
+      for (int i = 0; i &lt; width; ++i)
+      {
+        for (int j = 0; j &lt; height; ++j)
+        {
+          p2.at&lt;uchar&gt;(i, j) = 255 - p1.at&lt;uchar&gt;(i, j);
+        }
+      }
+
+      cvtColor(p1, p1, CV_GRAY2RGB);
+      cvtColor(p2, p2, CV_GRAY2RGB);
+
+      multiply(frame, p1, dst1, 1.0, CV_16U);
+      multiply(frame_borrado, p2, dst2, 1.0, CV_16U);
+
+      addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+      imshow("tiltshift", resultado);
+      // imshow("ponderacao 1", p1);
+      // imshow("ponderacao 2", p2);
+
+      cvtColor(p1, p1, CV_RGB2GRAY);
+      cvtColor(p2, p2, CV_RGB2GRAY);
+
+
+    if(waitKey(30) &gt;= 0) break;
+
+    //imwrite("imagem_resultado.png", resultado);
+
+  }
+
+
+  return 0;
+}
+
+O resultado de um dos frames, apesar da baixa qualidade do vídeo utilizado para o teste, pode ser visto na imagem a seguir:
+
+image:megamantilt.png[]</code></pre>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>
