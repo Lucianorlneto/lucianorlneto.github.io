@@ -2,7 +2,6 @@
 :toc: left
 :toc-title: Sumário
 :imagesdir: https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/
-:last-update-label!:
 
 = Resolução dos exercícios de PDI
 :author: Luciano Rodrigues Lucio Neto
