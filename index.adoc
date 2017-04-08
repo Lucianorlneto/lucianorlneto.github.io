@@ -692,17 +692,17 @@ float alpha(int x, int d, int l1, int l2){
 
 void on_trackbar_d(int, void*){
  d = d_slider;
- for (int i = 0; i < width; ++i)
+ for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
     }
   }
 
-  for (int i = 0; i < width; ++i)
+  for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
     }
@@ -724,17 +724,17 @@ void on_trackbar_d(int, void*){
 
 void on_trackbar_l1(int, void*){
  l1 = l1_slider;
- for (int i = 0; i < width; ++i)
+ for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
     }
   }
 
-  for (int i = 0; i < width; ++i)
+  for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
     }
@@ -756,17 +756,17 @@ void on_trackbar_l1(int, void*){
 
 void on_trackbar_l2(int, void*){
  l2 = l2_slider+height/2;
- for (int i = 0; i < width; ++i)
+ for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
     }
   }
 
-  for (int i = 0; i < width; ++i)
+  for (int i = 0; i < height; ++i)
   {
-    for (int j = 0; j < height; ++j)
+    for (int j = 0; j < width; ++j)
     {
       p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
     }
@@ -792,7 +792,7 @@ int main(int argvc, char** argv){
 
   cout << teste << endl;
 
-  src = imread("basket.jpg");
+  src = imread("basketgame.jpg");
 
   width=src.size().width;
   height=src.size().height;
@@ -808,13 +808,13 @@ int main(int argvc, char** argv){
 
 
 
-  Mat p11(width, height, CV_8UC1);
-  Mat p12(width, height, CV_8UC1);
+  Mat p11(height, width, CV_8UC1);
+  Mat p12(height, width, CV_8UC1);
 
   p1 = p11.clone();
   p2 = p12.clone();
 
-  for ( int i = 1; i < 12; i = i + 2 )
+  for ( int i = 1; i < 9; i = i + 2 )
     { 
       medianBlur ( src, dst, i );
     }
@@ -848,6 +848,8 @@ int main(int argvc, char** argv){
   return 0;
 }
 
+
+
 ----
 ****
 
@@ -861,7 +863,7 @@ Utilizando o programa exemplos/addweighted.cpp como referência, implemente um p
 
 ==== Resolução
 
-Para aplicar o efeito tiltshift em um vídeo, foi utilizado o mesmo algoritmo da questão anterior, porém , dependendo da resolução e quantidade de reetições do mesmo frame para o cálculo da média (_blur_), o vídeo começa a ser processado de forma muito lenta, ou seja, a forma como foi implementado o programa mostrado a seguir é inviável para aplicação do efeito tiltshift em vídeo de forma perfeita, porém, ainda aplica o efeito. Único passo que difere da implementação para uma simples é o redimensionamento do frame do vídeo para uma imagem MxM, pois as funções do OpenCv utilizadas não funcionam com matrizes MxN. O _blur_ é feito com 15 imagens e a função de cálculo das imagens de ponderação tem parâmetros d = 30, l1 = 1/4 do frame e l2 = 3/4 do frame.
+Para aplicar o efeito tiltshift em um vídeo, foi utilizado o mesmo algoritmo da questão anterior, porém , dependendo da resolução e quantidade de repetições do mesmo frame para o cálculo da média (_blur_), o vídeo começa a ser processado de forma muito lenta, ou seja, a forma como foi implementado o programa mostrado a seguir é inviável para aplicação do efeito tiltshift ao vivo enquanto o vídeo é reproduzido. Uma das formas que esse problema pode ser resolvido é processando o vídeo e armazenando em um novo arquivo de vídeo, tendo assim o vídeo completo com o efeito aplicado sem ver o vídeo travando ao processar o efeito enquanto é reproduzido. O _blur_ é feito com 9 imagens e a função de cálculo das imagens de ponderação tem parâmetros d = 30, l1 = 1/4 do frame e l2 = 3/4 do frame.
 
 
 [sidebar]
@@ -869,110 +871,99 @@ Para aplicar o efeito tiltshift em um vídeo, foi utilizado o mesmo algoritmo da
 .tiltshiftvideo.cpp
 [source,c++]
 ----
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <math.h>
+  #include <iostream>
+  #include <opencv2/opencv.hpp>
+  #include <math.h>
 
-using namespace cv;
-using namespace std;
+  using namespace cv;
+  using namespace std;
 
-int teste;
+  int width, height;
+  int d, l1, l2;
+  Mat p1, p2, dst1, dst2, resultado, frame_borrado, frame;
+  VideoCapture cap, video;
 
-char TrackbarName[50];
-
-int width, height;
-int d, l1, l2;
-Mat p1, p2, dst1, dst2, resultado, frame_borrado, frame;
-VideoCapture cap, video;
-
-float alpha(int x, int d, int l1, int l2){
-  double alpha = (float)255*(float)1/(float)2*((float)tanh(((float)x-(float)l1)/(float)d)-(float)tanh(((float)x-(float)l2)/(float)d));
-  return alpha;
-
-}
-
-int main(int argvc, char** argv){
-
-
-  video.open("megaman.mp4");
-
-  Size s(400,400);
-
-  video >> frame;
-  resize(frame, frame, s);
-
-  width  = frame.size().width;
-  height = frame.size().height;
-
-  d = 30;
-  l1 = height/4;
-  l2 = 3*height/4;
-
-  Mat p11(width, height, CV_8UC1);
-  Mat p12(width, height, CV_8UC1);
-
-  p1 = p11.clone();
-  p2 = p12.clone();
-
-  cout << width<< endl << height << endl;
-
-    namedWindow("tiltshift", 1);
-
-  while(true){
-
-    video >> frame;
-    resize(frame, frame, s);
-
-
-    for ( int i = 1; i < 15; i = i + 2 )
-      { 
-        medianBlur ( frame, frame_borrado, i );
-      }
-
-      for (int i = 0; i < width; ++i)
-      {
-        for (int j = 0; j < height; ++j)
-        {
-          p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
-        }
-      }
-
-      for (int i = 0; i < width; ++i)
-      {
-        for (int j = 0; j < height; ++j)
-        {
-          p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
-        }
-      }
-
-      cvtColor(p1, p1, CV_GRAY2RGB);
-      cvtColor(p2, p2, CV_GRAY2RGB);
-
-      multiply(frame, p1, dst1, 1.0, CV_16U);
-      multiply(frame_borrado, p2, dst2, 1.0, CV_16U);
-
-      addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
-      imshow("tiltshift", resultado); 
-      // imshow("ponderacao 1", p1);
-      // imshow("ponderacao 2", p2);
-
-      cvtColor(p1, p1, CV_RGB2GRAY);
-      cvtColor(p2, p2, CV_RGB2GRAY); 
-
-
-    if(waitKey(30) >= 0) break;
-
-    //imwrite("imagem_resultado.png", resultado);
+  float alpha(int x, int d, int l1, int l2){
+    double alpha = (float)255*(float)1/(float)2*((float)tanh(((float)x-(float)l1)/(float)d)-(float)tanh(((float)x-(float)l2)/(float)d));
+    return alpha;
 
   }
 
+  int main(int argvc, char** argv){
 
-  return 0;
-}
+
+    video.open("megaman.mp4");
+
+    video >> frame;
+
+    width  = frame.size().width;
+    height = frame.size().height;
+
+    d = 30;
+    l1 = height/4;
+    l2 = 3*height/4;
+
+    Mat p11(height, width, CV_8UC1);
+    Mat p12(height, width, CV_8UC1);
+
+    p1 = p11.clone();
+    p2 = p12.clone();
+
+    cout << width<< endl << height << endl;
+    cout << p1.size().width << endl << p1.size().height << endl;
+
+      namedWindow("tiltshift", 1);
+
+
+    for (int i = 0; i < height; ++i)
+        {
+          for (int j = 0; j < width; ++j)
+          {
+            p1.at<uchar>(i, j) = alpha(i, d, l1, l2);
+          }
+        }
+
+        for (int i = 0; i < height; ++i)
+        {
+          for (int j = 0; j < width; ++j)
+          {
+            p2.at<uchar>(i, j) = 255 - p1.at<uchar>(i, j);
+          }
+        }
+
+        cvtColor(p1, p1, CV_GRAY2RGB);
+        cvtColor(p2, p2, CV_GRAY2RGB);
+
+    while(true){
+
+      video >> frame;
+
+
+      for ( int i = 1; i < 9; i = i + 2 )
+        { 
+          medianBlur ( frame, frame_borrado, i );
+        }
+
+        multiply(frame, p1, dst1, 1.0, CV_16U);
+        multiply(frame_borrado, p2, dst2, 1.0, CV_16U);
+
+        addWeighted(dst1, 1 , dst2, 1, 100.0, resultado);
+        imshow("tiltshift", resultado); 
+
+
+      if(waitKey(30) >= 0) break;
+
+
+    }
+
+
+    return 0;
+  }
+
 
 ----
 ****
 
 O resultado de um dos frames, apesar da baixa qualidade do vídeo utilizado para o teste, pode ser visto na imagem a seguir:
 
-image:megamantiltshift.png[]
+image:exercicio%20tiltshiftvideo.png[]
