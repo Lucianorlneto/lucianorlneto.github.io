@@ -459,6 +459,16 @@ body.book #toc,body.book #preamble,body.book h1.sect0,body.book .sect1>h2{page-b
 <li><a href="#_5_2_exercício_2">5.2 Exercício 2</a></li>
 </ul>
 </li>
+<li><a href="#_6_seção_8_filtragem_no_domínio_da_frequência">6. Seção 8: Filtragem no domínio da frequência</a>
+<ul class="sectlevel2">
+<li><a href="#_6_1_exercício">6.1 Exercício</a></li>
+</ul>
+</li>
+<li><a href="#_7_seção_11_canny_e_a_arte_com_pontilhismo">7. Seção 11: Canny e a arte com pontilhismo</a>
+<ul class="sectlevel2">
+<li><a href="#_7_1_exercício">7.1 Exercício</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -1501,10 +1511,472 @@ int main(int argvc, char** argv){
 </div>
 </div>
 </div>
+<div class="sect1">
+<h2 id="_6_seção_8_filtragem_no_domínio_da_frequência">6. Seção 8: Filtragem no domínio da frequência</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_6_1_exercício">6.1 Exercício</h3>
+<div class="paragraph">
+<p>Utilizando o programa exemplos/dft.cpp como referência, implemente o filtro homomórfico para melhorar imagens com iluminação irregular. Crie uma cena mal iluminada e ajuste os parâmetros do filtro homomórfico para corrigir a iluminação da melhor forma possível. Assuma que a imagem fornecida é em tons de cinza.</p>
+</div>
+<div class="sect3">
+<h4 id="_resolução_10">Resolução</h4>
+<div class="paragraph">
+<p>Partindo do programa exemplos/dft.cpp, mencionado na seção 8, como referência, são feitas poucas alterações. O filtro utilizado é um filtro homomórfico, que é caracterizado pela equação abaixo, no lugar do filtro passa-baixas. São adicionados sliders para uma melhor determinação dos parâmetros de entrada para esse filtro e, a cada modificação de um valor dos sliders, é executado o mesmo algortimo do programa exemplo.cpp, porém utilizando uma função que aplica o filtro homomórfico.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/homomorficofiltro.png" alt="homomorficofiltro"></span></p>
+</div>
+<div class="paragraph">
+<p>Abaixo pode-se ver o código que aplica o filtro homomórfico com 4 sliders, um para cada parâmetro:</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">filtrohomomorfico.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">  #include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;opencv2/imgproc/imgproc.hpp&gt;
+
+using namespace cv;
+using namespace std;
+
+
+char TrackbarName[50];
+int gh_slider;
+int gh_slider_max = 500;
+int gl_slider;
+int gl_slider_max = 500;
+int c_slider;
+int c_slider_max = 500;
+int d0_slider;
+int d0_slider_max = 500;
+
+Mat imaginaryInput, complexImage, multsp;
+  Mat padded, filter, mag, resultado;
+  Mat image, imagegray, tmp;
+  Mat_&lt;float&gt; realInput, zeros;
+  vector&lt;Mat&gt; planos;
+
+   int dft_M, dft_N, M, N;
+
+   float gh, gl, c, d0;
+
+void deslocaDFT(Mat&amp; image ){
+  Mat tmp, A, B, C, D;
+
+  image = image(Rect(0, 0, image.cols &amp; -2, image.rows &amp; -2));
+  int cx = image.cols/2;
+  int cy = image.rows/2;
+
+  A = image(Rect(0, 0, cx, cy));
+  B = image(Rect(cx, 0, cx, cy));
+  C = image(Rect(0, cy, cx, cy));
+  D = image(Rect(cx, cy, cx, cy));
+
+  A.copyTo(tmp);  D.copyTo(A);  tmp.copyTo(D);
+
+  C.copyTo(tmp);  B.copyTo(C);  tmp.copyTo(B);
+}
+
+
+   void filtragem(){
+  for(int i=0; i&lt;dft_M; i++){
+    for(int j=0; j&lt;dft_N; j++){
+        tmp.at&lt;float&gt; (i,j) = (gh-gl)*(1.0-exp(-1.0*(float)c*((((float)i-M/2.0)*((float)i-M/2.0) + ((float)j-N/2.0)*((float)j-N/2.0))/(d0*d0))))+ gl;
+    }
+  }
+
+  Mat comps[]= {tmp, tmp};
+  merge(comps, 2, filter);
+
+
+    planos.clear();
+    realInput = Mat_&lt;float&gt;(padded);
+    planos.push_back(realInput);
+    planos.push_back(zeros);
+
+    merge(planos, complexImage);
+
+
+
+    dft(complexImage, complexImage);
+
+    deslocaDFT(complexImage);
+
+    mulSpectrums(complexImage,filter,complexImage,0);
+
+    planos.clear();
+    split(complexImage, planos);
+
+    merge(planos, complexImage);
+
+    deslocaDFT(complexImage);
+
+    idft(complexImage, complexImage);
+
+
+    planos.clear();
+
+    split(complexImage, planos);
+
+    normalize(planos[0], planos[0], 0, 1, CV_MINMAX);
+
+    imshow("original", image);
+    resultado = planos[0].clone();
+    imshow("homomorfico", resultado);
+   }
+
+   void on_trackbar_gh(int, void*){
+	gh = (float)gh_slider*0.1;
+
+	filtragem();
+}
+
+void on_trackbar_gl(int, void*){
+  gl = (float)gl_slider*0.1;
+
+  filtragem();
+}
+
+void on_trackbar_c(int, void*){
+  c = (float)c_slider*0.1;
+
+  filtragem();
+}
+
+void on_trackbar_d0(int, void*){
+  d0 = (float)d0_slider*0.1;
+
+  filtragem();
+}
+
+
+int main(int , char**){
+
+  image = imread("controle.png",CV_LOAD_IMAGE_GRAYSCALE);
+
+  namedWindow("settings", WINDOW_NORMAL);
+  namedWindow("original", WINDOW_NORMAL);
+  namedWindow("homomorfico", WINDOW_NORMAL);
+
+
+
+
+  dft_M = getOptimalDFTSize(image.rows);
+  dft_N = getOptimalDFTSize(image.cols);
+
+  copyMakeBorder(image, padded, 0,
+                 dft_M - image.rows, 0,
+                 dft_N - image.cols,
+                 BORDER_CONSTANT, Scalar::all(0));
+
+  zeros = Mat_&lt;float&gt;::zeros(padded.size());
+
+  complexImage = Mat(padded.size(), CV_32FC2, Scalar(0));
+
+  filter = complexImage.clone();
+
+  tmp = Mat(dft_M, dft_N, CV_32F);
+
+
+  M=dft_M;
+  N=dft_N;
+
+
+  sprintf( TrackbarName, "gh x %d", gh_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;gh_slider,
+          gh_slider_max,
+          on_trackbar_gh );
+  on_trackbar_gh(gh_slider, 0 );
+  sprintf( TrackbarName, "gl x %d", gl_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;gl_slider,
+          gl_slider_max,
+          on_trackbar_gl );
+  on_trackbar_gl(gl_slider, 0 );
+  sprintf( TrackbarName, "c x %d", c_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;c_slider,
+          c_slider_max,
+          on_trackbar_c );
+  on_trackbar_c(c_slider, 0 );
+  sprintf( TrackbarName, "d0 x %d", d0_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;d0_slider,
+          d0_slider_max,
+          on_trackbar_d0 );
+  on_trackbar_d0(d0_slider, 0 );
+
+    waitKey(0);
+
+    imwrite("imagem_resultado.png", resultado);
+
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>O resultado pode ser visto nas imagens abaixo:</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%208.1%20settings_homomorfico.png" alt="exercicio%208.1%20settings homomorfico"></span>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%208.1%20controle_original.png" alt="exercicio%208.1%20controle original"></span>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%208.1%20controle_homomorfico.png" alt="exercicio%208.1%20controle homomorfico"></span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_7_seção_11_canny_e_a_arte_com_pontilhismo">7. Seção 11: Canny e a arte com pontilhismo</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_7_1_exercício">7.1 Exercício</h3>
+<div class="ulist">
+<ul>
+<li>
+<p>Utilizando os programas exemplos/canny.cpp e exemplos/pontilhismo.cpp como referência, implemente um programa cannypoints.cpp. A idéia é usar as bordas produzidas pelo algoritmo de Canny para melhorar a qualidade da imagem pontilhista gerada. A forma como a informação de borda será usada é livre. Entretanto, são apresentadas algumas sugestões de técnicas que poderiam ser utilizadas:<br></p>
+<div class="ulist">
+<ul>
+<li>
+<p>Desenhar pontos grandes na imagem pontilhista básica;+</p>
+</li>
+<li>
+<p>Usar a posição dos pixels de borda encontrados pelo algoritmo de Canny para desenhar pontos nos respectivos locais na imagem gerada;+</p>
+</li>
+<li>
+<p>Experimente ir aumentando os limiares do algoritmo de Canny e, para cada novo par de limiares, desenhar círculos cada vez menores nas posições encontradas. A Figura Pontilhismo aplicado à imagem Lena foi desenvolvida usando essa técnica;<br></p>
+</li>
+</ul>
+</div>
+</li>
+<li>
+<p>Escolha uma imagem de seu gosto e aplique a técnica que você desenvolveu.<br></p>
+</li>
+<li>
+<p>Descreva no seu relatório detalhes do procedimento usado para criar sua técnica pontilhista.<br></p>
+</li>
+</ul>
+</div>
+<div class="sect3">
+<h4 id="_resolução_11">Resolução</h4>
+<div class="paragraph">
+<p>Para executar o pontilhismo com canny, foi necessário utilizar os dois códigos presentes na pergunta como referência. Primeiro é feita a técnica do pontilhismo utilizando parâmetros provindos de 3 sliders, que passam os valores STEP, JITTER e RAIO, que dão as características da técnica de pontilhismo. Após produzida a imagem com a técnica de pontilhismo, é executado o algoritmo de canny em um loop de 5 iterações na imagem original com um limiar inicial determinado por um slider e o raio dos círculos iniciando em 1 onde, a cada iteração do loop, o limiar é multiplicado por 2 e o raio somado em 1, fazendo com que, em cima da primeira imagem gerada com a técnica de pontilhismo, sejam gerados outros círculos que seguem as bordas da imagem gerada pelo algoritmo de canny de forma que, para bordas mais marcantes (limiares maiores), os círculos sejam maiores que os de bordas que caracterizam textura, por exemplo, fazendo com que sejam gerados circulos cada vez maiores para bordas mais significativas da imagem. Os limiares do algortimo de canny são, sendo um maior que o outro, o maior sendo duaz vezes o menor.</p>
+</div>
+<div class="paragraph">
+<p>Abaixo é possível ver o código do programa:</p>
+</div>
+<div class="sidebarblock">
+<div class="content">
+<div class="listingblock">
+<div class="title">cannyp.cpp</div>
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-c++" data-lang="c++">#include &lt;iostream&gt;
+#include &lt;opencv2/opencv.hpp&gt;
+#include &lt;fstream&gt;
+#include &lt;iomanip&gt;
+#include &lt;vector&gt;
+#include &lt;algorithm&gt;
+#include &lt;numeric&gt;
+#include &lt;ctime&gt;
+#include &lt;cstdlib&gt;
+
+using namespace std;
+using namespace cv;
+
+
+vector&lt;int&gt; yrange;
+  vector&lt;int&gt; xrange;
+
+  Mat image, frame, points, border;
+
+  int width, height;
+  int x, y, l, r;
+
+  Vec3b val;
+
+  char TrackbarName[50];
+int step_slider = 10;
+int step_slider_max = 30;
+int jitter_slider = 5;
+int jitter_slider_max = 30;
+int raio_slider = 5;
+int raio_slider_max = 30;
+int limiar_slider = 5;
+int limiar_slider_max = 30;
+
+  int STEP, JITTER, RAIO;
+
+  void final(){
+    xrange.resize(height/STEP);
+  yrange.resize(width/STEP);
+
+  iota(xrange.begin(), xrange.end(), 0);
+  iota(yrange.begin(), yrange.end(), 0);
+
+  for(uint i=0; i&lt;xrange.size(); i++){
+    xrange[i]= xrange[i]*STEP+STEP/2;
+  }
+
+  for(uint i=0; i&lt;yrange.size(); i++){
+    yrange[i]= yrange[i]*STEP+STEP/2;
+  }
+
+  points = Mat(height, width, CV_8UC3, Scalar(255, 255, 255));
+
+  random_shuffle(xrange.begin(), xrange.end());
+
+  for(auto i : xrange){
+    random_shuffle(yrange.begin(), yrange.end());
+    for(auto j : yrange){
+      x = i+rand()%(2*JITTER)-JITTER+1;
+      y = j+rand()%(2*JITTER)-JITTER+1;
+      val = image.at&lt;Vec3b&gt;(x,y);
+      circle(points,
+             cv::Point(y,x),
+             RAIO,
+             CV_RGB(val[2],val[1],val[0]),
+             -1,
+             CV_AA);
+    }
+  }
+
+  imshow("pontilhismo", points);
+
+
+  r = 1;
+
+  for(int a=0; a&lt;5; a++){
+    Canny(image, border, l, 2*l);
+    l=l*2;
+    for(int i=1; i&lt;height; i++){
+      for(int j=1; j&lt;width; j++){
+        if(border.at&lt;uchar&gt;(i,j) == 255){
+          val = image.at&lt;Vec3b&gt;(i,j);
+          circle(points,
+                 cv::Point(j,i),
+                 r,
+                 CV_RGB(val[2],val[1],val[0]),
+                 -1,
+                 CV_AA);
+        }
+      }
+    }
+    r=r+1;
+  }
+
+  imshow("pontilhismo com canny", points);
+  imshow("canny", border);
+  }
+
+  void on_trackbar_step(int, void*){
+  STEP = step_slider;
+
+  final();
+}
+
+void on_trackbar_jitter(int, void*){
+  JITTER = jitter_slider;
+
+  final();
+}
+
+void on_trackbar_raio(int, void*){
+  RAIO = raio_slider;
+
+  final();
+}
+
+void on_trackbar_limiar(int, void*){
+  l = limiar_slider;
+
+  final();
+}
+
+int main(int argc, char** argv){
+
+  l = 10;
+  STEP = 2;
+  JITTER = 2;
+  RAIO = 2;
+
+  image= imread(argv[1],CV_LOAD_IMAGE_COLOR);
+
+  namedWindow("pontilhismo com canny", WINDOW_NORMAL);
+  namedWindow("pontilhismo", WINDOW_NORMAL);
+  namedWindow("canny", WINDOW_NORMAL);
+  namedWindow("settings", WINDOW_NORMAL);
+
+  srand(time(0));
+
+  if(!image.data){
+  cout &lt;&lt; "nao abriu " &lt;&lt; argv[1] &lt;&lt; endl;
+    cout &lt;&lt; argv[0] &lt;&lt; " imagem.jpg";
+    exit(0);
+  }
+
+  width=image.size().width;
+  height=image.size().height;
+
+  sprintf( TrackbarName, "step x %d", step_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;step_slider,
+          step_slider_max,
+          on_trackbar_step );
+  on_trackbar_step(step_slider, 0 );
+  sprintf( TrackbarName, "jitter x %d", jitter_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;jitter_slider,
+          jitter_slider_max,
+          on_trackbar_jitter );
+  on_trackbar_jitter(jitter_slider, 0 );
+  sprintf( TrackbarName, "raio x %d", raio_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;raio_slider,
+          raio_slider_max,
+          on_trackbar_raio );
+  on_trackbar_raio(raio_slider, 0 );
+  sprintf( TrackbarName, "limiar x %d", limiar_slider_max );
+  createTrackbar( TrackbarName, "settings",
+          &amp;limiar_slider,
+          limiar_slider_max,
+          on_trackbar_limiar );
+  on_trackbar_limiar(limiar_slider, 0 );
+
+  final();
+
+
+  waitKey(0);
+
+  imwrite("pontilhismo_canny.jpg", points);
+
+  return 0;
+}</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="paragraph">
+<p>Os resultados do algoritmo podem ser vistos nas imagens a seguir, onde temos a imagem original, o as imagens geradas enquanto o algortimo é executado e a imagem final de forma que seja melhor de enxergar as alterações do que na imagem do programa sendo executado.</p>
+</div>
+<div class="paragraph">
+<p><span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/mx.jpg" alt="mx"></span>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%2011.1%20cannypontilhismo.png" alt="exercicio%2011.1%20cannypontilhismo"></span>
+<span class="image"><img src="https://raw.githubusercontent.com/Lucianorlneto/lucianorlneto.github.io/master/exercicio%2011.1%20pontilhismo_canny.jpg" alt="exercicio%2011.1%20pontilhismo canny"></span></p>
+</div>
+</div>
+</div>
+</div>
+</div>
 </div>
 <div id="footer">
 <div id="footer-text">
-Last updated 2017-04-07 21:54:15 BRT
+Last updated 2017-05-12 01:14:56 BRT
 </div>
 </div>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prettify/r298/prettify.min.css">
